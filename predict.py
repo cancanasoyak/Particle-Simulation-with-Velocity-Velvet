@@ -3,7 +3,7 @@ import numpy as np
 import multiprocessing
 from functools import partial
 
-from tools.Functions import Step_until_end
+from Functions import Step_until_end
 
 
 
@@ -26,13 +26,21 @@ if __name__ == '__main__':
     # keys: ['qpl_trajectory', 'tau_short', 'tau_long']
     tensor = dict['qpl_trajectory']
 
-
-    # molecule_positions = tensor[system_index][0][time][molecule_index]
-    # molecule_velocities = tensor[system_index][1][time][molecule_index]
-
-
-
-
+    # tensor has the following shape and structure:
+    # shape: [100,3,4,4,2]
+    
+    # molecule_positions = tensor[system_index][0][time][molecule_index] is a 2D array with the x and y coordinates of the molecule
+    # molecule_velocities = tensor[system_index][1][time][molecule_index] is a 2D array with the x and y velocities of the molecule
+    
+    
+    masses = [] # masses for each particle, every system has 4 particles
+    
+    for i in range(len(tensor)):                                # for each system
+        masses.append([1 for j in range(len(tensor[i][0][0]))]) # I created a masses vector with ones for every molecule
+    
+    masses = np.array(masses) # convert the list to a numpy array
+    
+    
     ###############################################################################################################
     ## Set Parameters                                                                                            ##
     ###############################################################################################################
@@ -65,14 +73,17 @@ if __name__ == '__main__':
     initial_velocities = [np.array(vel) for vel in initial_velocities]
 
     
-    # Create a partial function with fixed arguments
+    
+    
+    
+    # Create a partial function with fixed arguments for multiprocessing
     partial_step_until_end = partial(
         Step_until_end,
         masses=masses,
         epsilon=epsilon,
         sigma=sigma,
         dt=dt,
-        stop_time=0.003,
+        stop_time=0.03,
         box_size=box_size
     )
     
@@ -86,12 +97,16 @@ if __name__ == '__main__':
     with multiprocessing.Pool() as pool:
         results = pool.starmap(partial_worker, [(i, initial_positions, initial_velocities) for i in range(len(initial_positions))])
 
-
-
-    for system, final_pos, final_vel in results:
+    # Results has the following structure:
+    # [(system_idx, final_pos, final_vel), (system_idx, final_pos, final_vel), ...]
+    
+    print("Results: ", results)
+    
+    
+    """ for system, final_pos, final_vel in results:
         print("System: ", system)
         diff_pos = final_pos - tensor[system][0][3].numpy()
         diff_vel = final_vel - tensor[system][1][3].numpy()
         print("Final Positions: ", diff_pos)
-        print("Final Velocities: ", diff_vel)
+        print("Final Velocities: ", diff_vel) """
     
