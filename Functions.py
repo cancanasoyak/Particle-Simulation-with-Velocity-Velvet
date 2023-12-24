@@ -24,8 +24,6 @@ def lj_force(r, epsilon, sigma):
 
 
 
-
-
 def apply_periodic_boundary_conditions(position, box_size):
     """
     position: position of a particle
@@ -66,7 +64,7 @@ def velocity_verlet_full_step(positions, velocities, masses, epsilon, sigma, dt,
     num_particles = len(positions)
     
     # Calculate forces
-    forces = np.zeros_like(positions) # force = [x, y]
+    forces = np.zeros_like(positions, dtype=np.float64) # force = [x, y]
     for i in range(num_particles): #for each particle
         for j in range(i + 1, num_particles): #for each particle pair (not including previous pairs)
             r_ij = positions[j] - positions[i] #vector from particle i to particle j
@@ -189,7 +187,6 @@ def Step_until_end(initial_pos, initial_vel, masses, epsilon, sigma, dt, stop_ti
     
     func = velocity_verlet_half_step if half_step else velocity_verlet_full_step
     for step in range(int(stop_time / dt)):
-        
         next_pos, next_vel = func(initial_pos, initial_vel, masses, epsilon, sigma, dt, box_size)
         initial_pos = next_pos
         initial_vel = next_vel

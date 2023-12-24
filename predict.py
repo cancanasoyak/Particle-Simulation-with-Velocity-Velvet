@@ -22,7 +22,7 @@ if __name__ == '__main__':
     ## Load the tensor from the .pt file                                                                         ##
     ###############################################################################################################
 
-    dict = torch.load(r'Array\n4rho0.2T0.65t3.pt')
+    dict = torch.load(r'Array/n4rho0.2T0.65t3.pt')
     # keys: ['qpl_trajectory', 'tau_short', 'tau_long']
     tensor = dict['qpl_trajectory']
 
@@ -32,14 +32,16 @@ if __name__ == '__main__':
     # molecule_positions = tensor[system_index][0][time][molecule_index] is a 2D array with the x and y coordinates of the molecule
     # molecule_velocities = tensor[system_index][1][time][molecule_index] is a 2D array with the x and y velocities of the molecule
     
+    # create a masses vector for each particle in each system
+    # masses for each particle, every system has 4 particles
+    """ masses = [] #
     
-    masses = [] # masses for each particle, every system has 4 particles
+    for i in range(len(tensor)):  # for each system
+        masses.append(np.array([1 for j in range(len(tensor[i][0][0]))])) # I created a masses vector with ones for every molecule
     
-    for i in range(len(tensor)):                                # for each system
-        masses.append([1 for j in range(len(tensor[i][0][0]))]) # I created a masses vector with ones for every molecule
+    masses = np.array(masses) # convert the list to a numpy array """
     
-    masses = np.array(masses) # convert the list to a numpy array
-    
+    masses = [1,1,1,1]
     
     ###############################################################################################################
     ## Set Parameters                                                                                            ##
@@ -51,17 +53,15 @@ if __name__ == '__main__':
 
     box_size = np.sqrt(20) # simulation box size
 
-    stop_time = 10.0 # simulation time
+    stop_time = 10 # simulation time
     dt = 0.001 # time step
-
 
     epsilon = 1
     sigma = 1 # distance at which the inter-particle potential is zero, in this case the distance between two particles is 1.0 when they are next to each other
 
     ###############################################################################################################
-    ## Set Initial Conditions                                                                                    ##
+    ## Create lists for positions and velocities of each system                                                  ##
     ###############################################################################################################
-
 
     initial_positions = []
     initial_velocities = []
@@ -69,11 +69,8 @@ if __name__ == '__main__':
         initial_positions.append(tensor[i][0][0]) # initial positions of the molecules in time step 0 [system_index][0 for positions][timestep]
         initial_velocities.append(tensor[i][1][0]) # initial velocities of the molecules in time step 0 [system_index][1 for velocities][timestep]
 
-    initial_positions = [np.array(pos) for pos in initial_positions]
-    initial_velocities = [np.array(vel) for vel in initial_velocities]
-
-    
-    
+    initial_positions = [pos.numpy() for pos in initial_positions]
+    initial_velocities = [vel.numpy() for vel in initial_velocities]
     
     
     # Create a partial function with fixed arguments for multiprocessing
@@ -83,7 +80,7 @@ if __name__ == '__main__':
         epsilon=epsilon,
         sigma=sigma,
         dt=dt,
-        stop_time=0.03,
+        stop_time=stop_time,
         box_size=box_size
     )
     
@@ -100,13 +97,13 @@ if __name__ == '__main__':
     # Results has the following structure:
     # [(system_idx, final_pos, final_vel), (system_idx, final_pos, final_vel), ...]
     
-    print("Results: ", results)
-    
-    
-    """ for system, final_pos, final_vel in results:
-        print("System: ", system)
-        diff_pos = final_pos - tensor[system][0][3].numpy()
-        diff_vel = final_vel - tensor[system][1][3].numpy()
-        print("Final Positions: ", diff_pos)
-        print("Final Velocities: ", diff_vel) """
+    preds_tensor = torch.zeros(100, 3, 1, 4, 2)    
+
+    for system, final_pos, final_vel in results:
+        preds_tensor[system][0][0] = torch.tensor(final_pos, dtype=torch.float64)
+        preds_tensor[system][1][0] = torch.tensor(final_vel, dtype=torch.float64)
+        
+    preds_dict = {'qpl_trajectory': preds_tensor}
+
+    torch.save(preds_dict, r'Array/n4rho0.2T0.65t3_pred.pt')
     
