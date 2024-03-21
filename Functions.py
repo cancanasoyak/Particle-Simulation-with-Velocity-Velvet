@@ -68,7 +68,8 @@ def velocity_verlet_full_step(positions, velocities, masses, epsilon, sigma, dt,
     for i in range(num_particles): #for each particle
         for j in range(i + 1, num_particles): #for each particle pair (not including previous pairs)
             r_ij = positions[j] - positions[i] #vector from particle i to particle j
-            r_ij -= np.rint(r_ij / box_size) * box_size  # Apply periodic boundary conditions 
+            r_ij -= np.rint(r_ij / box_size) * box_size  # Apply periodic boundary conditions
+            
             dist = np.linalg.norm(r_ij) #eucledian distance between particle i and j
             
             # Lennard-Jones force
